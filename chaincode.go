@@ -15,6 +15,7 @@ type SmartContract struct {
 type LogFile struct {
 	FileID 		 string
 	Content    []byte
+	Authorized []string // List of authorized organizations/identities
 }
 
 func (sc *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
@@ -33,9 +34,16 @@ func (sc *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface)
 
 func (sc *SmartContract) UploadLogFile(ctx contractapi.TransactionContextInterface, fileID string, content []byte) error {
 
+	currentMSPID, err := ctx.GetClientIdentity().GetMSPID()
+
+	if (err != nil) {
+		return err
+	}
+
 	logFile := &LogFile{
 		FileID: 		fileID,
 		Content:    content,
+		Authorized: []string{currentMSPID}, // Add the MSP ID of the current client as an authorized organization
 	}
 
 	logFileBytes, err := json.Marshal(logFile)
@@ -61,6 +69,12 @@ func (sc *SmartContract) ReadLogFile(ctx contractapi.TransactionContextInterface
 	err = json.Unmarshal(logFileBytes, logFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal log file data: %w", err)
+	}
+
+	// Check if the client's MSP ID is in the authorized list
+	clientMSPID, err := ctx.GetClientIdentity().GetMSPID()
+	if !contains(logFile.Authorized, clientMSPID) {
+		return nil, fmt.Errorf("unauthorized access to log file")
 	}
 
 	return logFile, nil
