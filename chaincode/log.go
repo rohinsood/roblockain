@@ -1,4 +1,4 @@
-package main
+package chaincode
 
 import (
 	"crypto/sha256"
@@ -109,16 +109,4 @@ func isAuthorized(ctx contractapi.TransactionContextInterface) error {
 	}
 
 	return fmt.Errorf("unauthorized access: %s is not an authorized user", clientID)
-}
-
-func main() {
-	chaincode, err := contractapi.NewChaincode(&SmartContract{})
-	if err != nil {
-		fmt.Printf("Error creating log file chaincode: %s", err.Error())
-		return
-	}
-
-	if err := chaincode.Start(); err != nil {
-		fmt.Printf("Error starting log file chaincode: %s", err.Error())
-	}
 }
